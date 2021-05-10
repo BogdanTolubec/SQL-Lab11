@@ -1,0 +1,115 @@
+1)CREATE TABLE `position` (id_position INT AUTO_INCREMENT NOT NULL,
+position_name VARCHAR(200),
+PRIMARY KEY(id_position))
+ENGINE = InnoDB;
+2)CREATE TABLE `reservation` (id_reservation INT AUTO_INCREMENT NOT NULL UNIQUE,
+client_id INT NOT NULL,
+PRIMARY KEY (id_reservation),
+FOREIGN KEY (client_id) REFERENCES clients(id_client))
+ENGINE = InnoDB;
+3)CREATE TABLE `clients` (id_client INT AUTO_INCREMENT NOT NULL,
+client_second_name VARCHAR(256),
+client_name VARCHAR(256),
+client_patronymic VARCHAR(200),
+client_DOB DATE,
+client_sex VARCHAR(20),
+PRIMARY KEY(id_client))
+ENGINE = INNODB;
+4)CREATE TABLE `hotel_room_category` (id_room_category INT AUTO_INCREMENT NOT NULL,
+room_category_name VARCHAR(150),
+number_of_places SMALLINT UNSIGNED,
+count_of_rooms SMALLINT UNSIGNED,
+price_per_day MEDIUMINT UNSIGNED,
+extra_info VARCHAR(256),
+PRIMARY KEY(id_room_category))
+ENGINE = InnoDB;
+5)CREATE TABLE `hotel_room` (id_room INT AUTO_INCREMENT NOT NULL,
+id_category INT,
+FOREIGN KEY (id_category) REFERENCES hotel_room_category(id_room_category),
+PRIMARY KEY (id_room))
+ENGINE = InnoDB;
+6)CREATE TABLE `workers` (id_workers INT AUTO_INCREMENT NOT NULL UNIQUE,
+worker_name VARCHAR(200),
+worker_second_name VARCHAR(200),
+worker_patronymic VARCHAR(256),
+worker_DOB DATE NOT NULL,
+worker_education VARCHAR(256),
+id_worker_position INT NOT NULL,
+worker_payment INT,
+PRIMARY KEY(id_workers),
+FOREIGN KEY(id_worker_position) REFERENCES position (id_position))
+ENGINE = INNODB;
+7)CREATE TABLE `room_condition` (id_rooms INT AUTO_INCREMENT NOT NULL UNIQUE,
+id_worker INT NOT NULL,
+reservation_id INT NOT NULL,
+date_of_settling DATE,
+date_of_leaving DATE,
+PRIMARY KEY(id_rooms),
+FOREIGN KEY(id_worker) REFERENCES workers (id_workers),
+FOREIGN KEY(reservation_id) REFERENCES reservation (id_reservation),
+FOREIGN KEY(id_rooms) REFERENCES hotel_room (id_room))
+ENGINE = INNODB;
+8)private void Form2_Load(object sender, EventArgs e)
+        {
+            //вывод фамилий определенной группы
+            cls.Conn.Close();
+            cls.Conn.Open();
+ 
+            SqlCommand fam = new SqlCommand("Select FIO, [kol-vo], day From Gruppa join Student on Gruppa.Id_gruppa=Student.Id_gruppa join Data on Student.Id_student = Data.Id_student where nazv like ('" + label2.Text + "')", cls.Conn);
+ 
+            SqlDataReader myReader = fam.ExecuteReader(CommandBehavior.CloseConnection);
+            int j = 0;
+            dataGridView1.RowCount = 1;
+            while (myReader.Read())
+            {
+                ++dataGridView1.RowCount;              
+                for (int i = 0; i < dataGridView1.RowCount; i++)
+                {
+                    int b = Convert.ToInt32(myReader[2]);
+                    if (myReader[0].ToString() == dataGridView1.Rows[j].Cells[1].ToString())
+                    {
+                        dataGridView1.Rows[j].Cells[0].Value = j + 1;
+                        dataGridView1.Rows[j].Cells[1].Value = (myReader[0].ToString());
+                        dataGridView1.Rows[j].Cells[b].Value = (myReader[1].ToString());
+                    }
+                    else
+                    {
+                                                dataGridView1.Rows[j].Cells[1].Value = (myReader[0].ToString());
+                        dataGridView1.Rows[j].Cells[b].Value = (myReader[1].ToString());
+ 
+                    }
+                }
+            }
+            myReader.Close();
+            cls.Conn.Close();
+                    }
+9)DELIMITER $$
+CREATE TRIGGER phone_number BEFORE DELETE ON clients
+FOR EACH ROW
+DELETE FROM `reservation` WHERE old.id_client = reservation.client_id;
+$$
+10)DELIMITER $$
+CREATE TRIGGER DOB_check BEFORE INSERT ON clients
+FOR EACH ROW
+IF(YEAR(new.client_DOB) > (YEAR(CURRENT_DATE) - 18))
+THEN
+SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No 18 year client!';
+ELSEIF((YEAR(CURRENT_DATE) - YEAR(new.client_DOB)) > 150)
+THEN
+SET @err2 = 'More then 150 years old client!';
+END IF;
+$$DELIMITER $$
+CREATE TRIGGER DOB_check BEFORE INSERT ON clients
+FOR EACH ROW
+IF(YEAR(new.client_DOB) > (YEAR(CURRENT_DATE) - 18))
+THEN
+SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No 18 year client!';
+ELSEIF((YEAR(CURRENT_DATE) - YEAR(new.client_DOB)) > 150)
+THEN
+SET @err2 = 'More then 150 years old client!';
+END IF;
+$$
+11)CREATE PROCEDURE client_id_find (IN name VARCHAR(200), surname VARCHAR(200))
+SELECT id_client FROM clients WHERE clients.client_name = name AND clients.client_second_name = surname
+12)CREATE PROCEDURE find_rooms_by_category (category VARCHAR(100))
+SELECT id_room FROM `hotel_room` WHERE hotel_room.category LIKE category
